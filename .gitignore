@@ -1,0 +1,13 @@
+.vs/
+*.slnx.sqlite
+cloud_ai_document_search.egg-info/
+
+__pycache__/
+*.pyc
+.venv/
+.env
+
+data/uploads/*
+data/chunks/*
+!data/uploads/.gitkeep
+!data/chunks/.gitkeep
