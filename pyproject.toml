@@ -1,9 +1,9 @@
 [project]
 name = "cloud-ai-document-search"
 version = "0.1.0"
-description = "Cloud + AI-powered search API (RAG)
+description = "Cloud-ready AI-powered document search API (RAG)"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
   "fastapi>=0.110",
   "uvicorn[standard]>=0.27",
@@ -20,7 +20,7 @@ dev = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py310"
 select = ["E", "F", "I", "B", "UP"]
 
 [tool.pytest.ini_options]
