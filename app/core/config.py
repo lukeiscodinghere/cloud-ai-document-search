@@ -6,4 +6,7 @@ class Settings(BaseSettings):
     environment: str = "local"   # local | production
     log_level: str = "INFO"
 
+    embeddings_provider: str = "local"  # local | openai
+    allow_paid_api: bool = False 
+
 settings = Settings()

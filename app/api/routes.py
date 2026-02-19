@@ -6,9 +6,11 @@ from pydantic import BaseModel
 from app.rag.retrieval import search_chunks_semantic
 from app.rag.pipeline import rag_answer
 from app.storage.files import build_and_store_chunks, extract_text_from_file, save_upload
+import logging
 
 router = APIRouter(tags=["api"])
 
+logger = logging.getLogger(__name__)
 
 @router.get("/info")
 def info():
@@ -19,6 +21,7 @@ def info():
 
 @router.get("/health")
 def health():
+    logger.info("Health is ok")
     return {"status": "ok"}
 
 
@@ -47,6 +50,14 @@ async def upload(file: UploadFile = File(...)):
 
     text_stripped = text.strip()
     preview = (text_stripped[:300] + "...") if len(text_stripped) > 300 else text_stripped
+    logger.info(
+    "File uploaded",
+    extra={
+        "filename": file.filename,
+        "doc_id": doc_id,
+        "chunk_count": result["chunk_count"],
+    },
+)
     return {"doc_id": doc_id, "chunk_count": result["chunk_count"], "preview": preview}
 
 
@@ -56,4 +67,5 @@ class AskRequest(BaseModel):
 
 @router.post("/ask")
 def ask(request: AskRequest):
+    logger.info("Question asked")
     return rag_answer(request.question)

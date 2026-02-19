@@ -1,0 +1,297 @@
+﻿<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cloud AI Document Search</title>
+    <style>
+        :root {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #0b1220;
+            color: #e7eefc;
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 28px 18px;
+        }
+
+        .card {
+            background: #111a2e;
+            border: 1px solid #233255;
+            border-radius: 14px;
+            padding: 18px;
+            margin: 14px 0;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 22px;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            color: #b9c7ea;
+        }
+
+        label {
+            display: block;
+            margin: 8px 0 6px;
+            color: #b9c7ea;
+            font-size: 13px;
+        }
+
+        input[type="file"], input[type="text"], textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #2a3a63;
+            background: #0c1426;
+            color: #e7eefc;
+            outline: none;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #2a3a63;
+            background: #1b2a4a;
+            color: #e7eefc;
+            cursor: pointer;
+        }
+
+            button:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+        .muted {
+            color: #9fb1dd;
+            font-size: 13px;
+        }
+
+        pre {
+            background: #0c1426;
+            border: 1px solid #2a3a63;
+            border-radius: 10px;
+            padding: 12px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid #2a3a63;
+            color: #b9c7ea;
+            font-size: 12px;
+        }
+
+        .ok {
+            color: #9ff0c6;
+        }
+
+        .err {
+            color: #ffb3b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>Cloud AI Document Search <span class="pill">local UI</span></h1>
+        <p class="muted">Upload (.txt/.md) → Chunks → Ask (Retrieval). Backend: <code id="baseUrl"></code></p>
+
+        <div class="card">
+            <h2>1) Upload</h2>
+            <label>Datei auswählen (.txt / .md)</label>
+            <div class="row">
+                <input id="file" type="file" accept=".txt,.md" />
+                <button id="btnUpload">Upload</button>
+                <span id="uploadStatus" class="muted"></span>
+            </div>
+            <label>Upload-Response</label>
+            <pre id="uploadOut">{}</pre>
+        </div>
+
+        <div class="card">
+            <h2>2) Ask</h2>
+            <label>Frage</label>
+            <div class="row">
+                <input id="question" type="text" placeholder='z.B. "What is RAG?"' />
+                <button id="btnAsk">Ask</button>
+                <span id="askStatus" class="muted"></span>
+            </div>
+
+            <label>Antwort</label>
+            <pre id="askOut">{}</pre>
+        </div>
+
+        <div class="card">
+            <h2>Health</h2>
+            <div class="row">
+                <button id="btnHealth">Check /health</button>
+                <span id="healthStatus" class="muted"></span>
+            </div>
+            <pre id="healthOut">{}</pre>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+        document.getElementById("baseUrl").textContent = baseUrl;
+
+        const uploadOut = document.getElementById("uploadOut");
+        const askOut = document.getElementById("askOut");
+        const healthOut = document.getElementById("healthOut");
+
+        const uploadStatus = document.getElementById("uploadStatus");
+        const askStatus = document.getElementById("askStatus");
+        const healthStatus = document.getElementById("healthStatus");
+
+        const btnUpload = document.getElementById("btnUpload");
+        const btnAsk = document.getElementById("btnAsk");
+        const btnHealth = document.getElementById("btnHealth");
+
+        function pretty(obj) {
+            return JSON.stringify(obj, null, 2);
+        }
+
+        async function safeJson(res) {
+            const text = await res.text();
+            try { return JSON.parse(text); } catch { return { raw: text }; }
+        }
+
+        btnUpload.addEventListener("click", async () => {
+            const fileInput = document.getElementById("file");
+            const f = fileInput.files?.[0];
+            uploadStatus.className = "muted";
+            uploadStatus.textContent = "";
+            uploadOut.textContent = "{}";
+
+            if (!f) {
+                uploadStatus.className = "muted err";
+                uploadStatus.textContent = "Bitte zuerst eine Datei auswählen.";
+                return;
+            }
+
+            btnUpload.disabled = true;
+            uploadStatus.textContent = "Uploading...";
+
+            try {
+                const fd = new FormData();
+                fd.append("file", f);
+
+                const res = await fetch(`${baseUrl}/api/upload`, {
+                    method: "POST",
+                    body: fd
+                });
+
+                const data = await safeJson(res);
+                uploadOut.textContent = pretty(data);
+
+                if (res.ok) {
+                    uploadStatus.className = "muted ok";
+                    uploadStatus.textContent = "Upload OK!";
+                } else {
+                    uploadStatus.className = "muted err";
+                    uploadStatus.textContent = `Upload failed (${res.status})`;
+                }
+            } catch (e) {
+                uploadStatus.className = "muted err";
+                uploadStatus.textContent = "Network error";
+                uploadOut.textContent = pretty({ error: String(e) });
+            } finally {
+                btnUpload.disabled = false;
+            }
+        });
+
+        btnAsk.addEventListener("click", async () => {
+            const q = document.getElementById("question").value.trim();
+            askStatus.className = "muted";
+            askStatus.textContent = "";
+            askOut.textContent = "{}";
+
+            if (!q) {
+                askStatus.className = "muted err";
+                askStatus.textContent = "Bitte eine Frage eingeben.";
+                return;
+            }
+
+            btnAsk.disabled = true;
+            askStatus.textContent = "Asking...";
+
+            try {
+                const res = await fetch(`${baseUrl}/api/ask`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: q })
+                });
+
+                const data = await safeJson(res);
+                askOut.textContent = pretty(data);
+
+                if (res.ok) {
+                    askStatus.className = "muted ok";
+                    askStatus.textContent = "OK!";
+                } else {
+                    askStatus.className = "muted err";
+                    askStatus.textContent = `Ask failed (${res.status})`;
+                }
+            } catch (e) {
+                askStatus.className = "muted err";
+                askStatus.textContent = "Network error";
+                askOut.textContent = pretty({ error: String(e) });
+            } finally {
+                btnAsk.disabled = false;
+            }
+        });
+
+        btnHealth.addEventListener("click", async () => {
+            healthStatus.className = "muted";
+            healthStatus.textContent = "Checking...";
+            healthOut.textContent = "{}";
+            btnHealth.disabled = true;
+
+            try {
+                const res = await fetch(`${baseUrl}/health`);
+                const data = await safeJson(res);
+                healthOut.textContent = pretty(data);
+
+                if (res.ok) {
+                    healthStatus.className = "muted ok";
+                    healthStatus.textContent = "Healthy!";
+                } else {
+                    healthStatus.className = "muted err";
+                    healthStatus.textContent = `Unhealthy (${res.status})`;
+                }
+            } catch (e) {
+                healthStatus.className = "muted err";
+                healthStatus.textContent = "Network error";
+                healthOut.textContent = pretty({ error: String(e) });
+            } finally {
+                btnHealth.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
