@@ -13,7 +13,11 @@ FastAPI → Vector DB → OpenAI → Respons
 Start the server:
 uvicorn app.main:app --reload
 
-User Interface (Lokal): 
+
+User Interface (Lokal):
+
 http://127.0.0.1:8000/ (UI)
+
 http://127.0.0.1:8000/docs (Swagger)
+
 http://127.0.0.1:8000/health (Health)
