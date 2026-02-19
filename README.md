@@ -1,6 +1,6 @@
 # cloud-ai-document-search
 **Idee:**
-
+### Struktur:
 Client → FastAPI → Retrieval → Chunk Storage
 
 - theoretisch könnte es dann auch andocken an:
