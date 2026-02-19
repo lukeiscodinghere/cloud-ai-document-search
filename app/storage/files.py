@@ -34,13 +34,22 @@ def extract_text_from_file(path: Path) -> str:
 def build_and_store_chunks(doc_id: str, text: str) -> dict:
     ensure_data_dirs()
     chunks = chunk_text(text)
+
+    from app.rag.embeddings import embed_texts
+    vectors = embed_texts([c.text for c in chunks]) if chunks else []
+
     payload = {
         "doc_id": doc_id,
         "chunk_count": len(chunks),
-        "chunks": [{"index": c.index, "text": c.text} for c in chunks],
+        "chunks": [
+            {"index": c.index, "text": c.text, "embedding": vectors[i]}
+            for i, c in enumerate(chunks)
+        ],
     }
+
     (CHUNKS_DIR / f"{doc_id}.json").write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
     return payload
+

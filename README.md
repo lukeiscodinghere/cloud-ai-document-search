@@ -1,2 +1,9 @@
 # cloud-ai-document-search
-**Idee:** Dokumente (PDF/TXT/MD) hochladen → Erstellt Vektoren (Embeddings) → Fragen stellen → sucht passende Textstellen (Retrieval) und LLM bastelt daraus eine Antwort
+**Idee:**
+
+Client → FastAPI → Retrieval → Chunk Storage
+
+- theoretisch könnte es dann auch andocken an:
+FastAPI → Vector DB → OpenAI → Respons
+[kostet aber Geld, da OpenAI API calls nötig wären]
+
